@@ -1,5 +1,5 @@
 try:
-    import os, gratient, requests, colorama, time, random
+    import os, gratient, requests, colorama, time, random, sys, base64
 except ImportError:
     input("Error while importing modules. Please run 'pip install -r requirements.txt'")
     exit()
@@ -7,6 +7,7 @@ except ImportError:
 # colorama.init(convert=True)
 token = []
 token_counter = 0
+tokenlen = 0
 version = "0.0.1"
 banner = """
  ▄▀▀█▄▄   ▄▀▀█▀▄   ▄▀▀▀▀▄  ▄▀▄▄▄▄   ▄▀▀▀▀▄   ▄▀▀▄▀▀▀▄  ▄▀▀█▄▄       ▄▀▀█▄   ▄▀▀█▀▄   ▄▀▀▀▀▄  
@@ -18,14 +19,14 @@ banner = """
 ▐        ▐       ▐        ▐         i  d    a  r      ▐                    ▐       ▐                                         
 """
 options = """
-╔════════════════════════╦═════════════════════════╗
-║ > Token Options        ║ > Raider                ║
-╠═══╦════════════════════╬═══╦═════════════════════║ 
-║ 1 ║ Token Checker      ║ 5 ║ Friend Sender       ║
-║ 2 ║ Duplicate Deleter  ║ 6 ║ Guild Joiner        ║
-║ 3 ║ Nitro Checker      ║ 7 ║ Guild Leaver        ║
-║ 4 ║ Get Token Info     ║ 8 ║ Dm Message Sender   ║
-╚═══╩════════════════════╩═══╩═════════════════════╝
+╔════════════════════════╦═════════════════════════╦════════════════════════╗
+║ > Token Options        ║ > Raider                ║ > Options              ║
+╠═══╦════════════════════╬═══╦═════════════════════╬════╦═══════════════════║
+║ 1 ║ Token Checker      ║ 5 ║ Friend Sender       ║ 98 ║  Reload Tokens    ║
+║ 2 ║ Duplicate Deleter  ║ 6 ║ Guild Joiner        ║ 99 ║      Exit         ║
+║ 3 ║ Nitro Checker      ║ 7 ║ Guild Leaver        ║    ║                   ║
+║ 4 ║ Get Token Info     ║ 8 ║ Dm Message Sender   ║    ║                   ║
+╚═══╩════════════════════╩═══╩═════════════════════╩════╩═══════════════════╝
 """
 
 
@@ -56,6 +57,15 @@ class aioclass:
             return "verify"
         else:
             return r.json()["id"]
+
+    def guildutil(self, code):
+        r = requests.get(f"https://discord.com/api/v9/invites/{code}")
+        if "Unknown Invite" in r.text:
+            return "unknown"
+        else:
+            guild = r.json()["guild"]
+            channel = r.json()["channel"]
+            return guild.id, channel.id
 
     def tokencheck(self):
         try:
@@ -125,7 +135,7 @@ class aioclass:
             user_id = r.json()["id"]
             email = r.json()["email"]
             phone = r.json()["phone"]
-            mfa = r.json()["mfa_enabled"]            
+            mfa = r.json()["mfa_enabled"]
             locale = r.json()["locale"]
             # nitro
             if r.json()["premium_type"] == 0:
@@ -141,12 +151,10 @@ class aioclass:
             script_dir = os.path.dirname(__file__)
             rel_path = "./OUTPUTs/tokeninfo.txt"
             dir = os.path.join(script_dir, rel_path)
-            with open(dir, "a") as f:
-                print("sa")
+            with open(dir, "a", encoding="utf8") as f:
                 f.write(
                     f"╔═══════════════════════════════════════════════════════════════════╗\nUsername > {username}\nUser ID > {user_id}\nEmail > {email}\nPhone > {phone}\nMFA > {mfa}\nNitro > {nitro}\nLocale > {locale}\n╚═══════════════════════════════════════════════════════════════════╝\n\n"
                 )
-                print("as")
 
             return True, self.token
         except:
@@ -200,15 +208,21 @@ class aioclass:
             )
 
     def guildjoiner(self):
+        gid, cid = self.guildutil(self.input)
+        if gid == "unknown":
+            return False, "Unknown Invite Code!"
+        # TODO
+        # cp = {"location":"Join Guild","location_guild_id":gid,"location_channel_id":cid,"location_channel_type":0}
+        # contextproperties = base64.b64encode(cp.encode("utf8"))
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Firefox/102.0",
             "Accept": "*/*",
             "Accept-Language": "en-US",
             "Accept-Encoding": "gzip, deflate, br",
             "Content-Type": "application/json",
-            "X-Context-Properties": "eyJsb2NhdGlvbiI6IkpvaW4gR3VpbGQiLCJsb2NhdGlvbl9ndWlsZF9pZCI6Ijk4OTkxOTY0NTY4MTE4ODk1NCIsImxvY2F0aW9uX2NoYW5uZWxfaWQiOiI5OTAzMTc0ODgxNzg4NjgyMjQiLCJsb2NhdGlvbl9jaGFubmVsX3R5cGUiOjB9",
+            # "X-Context-Properties": "eyJsb2NhdGlvbiI6IkpvaW4gR3VpbGQiLCJsb2NhdGlvbl9ndWlsZF9pZCI6Ijk4OTkxOTY0NTY4MTE4ODk1NCIsImxvY2F0aW9uX2NoYW5uZWxfaWQiOiI5OTAzMTc0ODgxNzg4NjgyMjQiLCJsb2NhdGlvbl9jaGFubmVsX3R5cGUiOjB9",
             "Authorization": self.token,
-            "X-Super-Properties": "eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiRmlyZWZveCIsImRldmljZSI6IiIsInN5c3RlbV9sb2NhbGUiOiJmciIsImJyb3dzZXJfdXNlcl9hZ2VudCI6Ik1vemlsbGEvNS4wIChXaW5kb3dzIE5UIDEwLjA7IFdpbjY0OyB4NjQ7IHJ2OjEwMi4wKSBHZWNrby8yMDEwMDEwMSBGaXJlZm94LzEwMi4wIiwiYnJvd3Nlcl92ZXJzaW9uIjoiMTAyLjAiLCJvc192ZXJzaW9uIjoiMTAiLCJyZWZlcnJlciI6IiIsInJlZmVycmluZ19kb21haW4iOiIiLCJyZWZlcnJlcl9jdXJyZW50IjoiIiwicmVmZXJyaW5nX2RvbWFpbl9jdXJyZW50IjoiIiwicmVsZWFzZV9jaGFubmVsIjoic3RhYmxlIiwiY2xpZW50X2J1aWxkX251bWJlciI6MTM2MjQwLCJjbGllbnRfZXZlbnRfc291cmNlIjpudWxsfQ==",
+            # "X-Super-Properties": "eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiRmlyZWZveCIsImRldmljZSI6IiIsInN5c3RlbV9sb2NhbGUiOiJmciIsImJyb3dzZXJfdXNlcl9hZ2VudCI6Ik1vemlsbGEvNS4wIChXaW5kb3dzIE5UIDEwLjA7IFdpbjY0OyB4NjQ7IHJ2OjEwMi4wKSBHZWNrby8yMDEwMDEwMSBGaXJlZm94LzEwMi4wIiwiYnJvd3Nlcl92ZXJzaW9uIjoiMTAyLjAiLCJvc192ZXJzaW9uIjoiMTAiLCJyZWZlcnJlciI6IiIsInJlZmVycmluZ19kb21haW4iOiIiLCJyZWZlcnJlcl9jdXJyZW50IjoiIiwicmVmZXJyaW5nX2RvbWFpbl9jdXJyZW50IjoiIiwicmVsZWFzZV9jaGFubmVsIjoic3RhYmxlIiwiY2xpZW50X2J1aWxkX251bWJlciI6MTM2MjQwLCJjbGllbnRfZXZlbnRfc291cmNlIjpudWxsfQ==",
             "X-Discord-Locale": "en-US",
             # 'X-Debug-Options': 'bugReporterEnabled',
             "Origin": "https://discord.com",
@@ -227,7 +241,7 @@ class aioclass:
                 headers=headers,
                 json={},
             )
-
+            print(r.text)
             if "You need to update your app to join this server." in r.text:
                 return False, f"Token could not join the server ({self.token})"
             if "You are at the 100 server limit." in r.text:
@@ -292,8 +306,11 @@ class aioclass:
                     "flags": 0,
                 },
             )
+            print(r.text)
             if "Cannot send messages to this user" in r.text:
                 return False, f"Cannot send messages to this user ({self.token})"
+            elif "captcha-required" in r.text:
+                return False, f"Captcha Required ({self.token})"
             return True, f"Message Sent ({self.token})"
         except:
             return False, f"Message could not be sent ({self.token})"
@@ -308,7 +325,15 @@ def ops():
     os.system("cls && title Discord AIO")
     print(banner)
     loadtoken()
+    print(
+        colorama.Fore.GREEN
+        + str(tokenlen)
+        + colorama.Fore.YELLOW
+        + " tokens loaded."
+        + colorama.Fore.RESET
+    )
     print(gratient.yellow(options))
+
     selectmodule = int(input(gratient.red("Select Module > ")))
     os.system("cls")
     match selectmodule:
@@ -344,10 +369,14 @@ def ops():
             os.system("title Discord AIO / Dm Message Sender")
             print(banner)
             senddmmessage()
+        case 98:
+            ops()
+        case 99:
+            sys.exit()
 
 
 def loadtoken():
-    global token, token_counter
+    global token, token_counter, tokenlen
     token = []
     token_counter = 0
     script_dir = os.path.dirname(__file__)
@@ -360,6 +389,8 @@ def loadtoken():
     with open(tokenpath, "r", encoding="ISO-8859-1") as f:
         for line in f.readlines():
             line = line.replace("\n", "")
+            tokenlen = len(token)
+            tokenlen += 1
             token.append(line)
         if not len(token):
             print(colorama.Fore.YELLOW + "\ntokens.txt is EMPTY!")
